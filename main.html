@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Pilot Dashboard V4</title>
+    <style>
+        :root {
+            --bg-main: #0a0e17;
+            --bg-sidebar: #111827;
+            --bg-card: #1f2937;
+            --bg-input: #374151;
+            --accent-blue: #3b82f6;
+            --accent-hover: #2563eb;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border-color: #4b5563;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Top Navigation */
+        .top-nav {
+            background-color: var(--bg-sidebar);
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 24px;
+            cursor: pointer;
+            margin-right: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .menu-btn:hover {
+            background-color: var(--bg-input);
+        }
+
+        .nav-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--accent-blue);
+            letter-spacing: 1px;
+        }
+
+        /* App Container */
+        .app-container {
+            display: flex;
+            flex: 1;
+            margin-top: 60px;
+            position: relative;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background-color: var(--bg-sidebar);
+            width: 260px;
+            position: fixed;
+            top: 60px;
+            bottom: 0;
+            left: 0;
+            z-index: 90;
+            border-right: 1px solid var(--border-color);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px 0;
+        }
+
+        .sidebar.closed {
+            transform: translateX(-260px);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-item {
+            padding: 12px 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            font-weight: 500;
+            border-left: 4px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background-color: var(--bg-input);
+            color: var(--text-main);
+        }
+
+        .sidebar-item.active {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--accent-blue);
+            border-left-color: var(--accent-blue);
+        }
+
+        .sidebar-heading {
+            padding: 10px 24px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--border-color);
+            font-weight: bold;
+        }
+
+        .sidebar-stats {
+            padding: 0 24px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background-color: var(--bg-main);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-box label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .stat-box span {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .clear-btn {
+            width: calc(100% - 48px);
+            margin: 0 24px;
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .clear-btn:hover {
+            background-color: var(--danger-hover);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            margin-left: 260px;
+            transition: margin-left 0.3s ease;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        /* Views */
+        .view-section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--bg-card);
+            padding-bottom: 10px;
+        }
+
+        /* Forms and Cards Layout */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        @media (min-width: 1024px) {
+            .grid-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+        }
+
+        input, select {
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .conditional-fields {
+            background-color: rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            border: 1px dashed var(--border-color);
+        }
+
+        .result-display {
+            background-color: var(--bg-main);
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid var(--accent-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-display .label {
+            font-weight: bold;
+            color: var(--accent-blue);
+        }
+
+        .result-display .value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        /* Dashboard Clients Display */
+        .search-container {
+            margin-bottom: 24px;
+        }
+
+        .client-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .client-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .client-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .client-card {
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+
+        .client-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .client-header {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+        }
+
+        .client-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent-blue);
+        }
+
+        .client-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .client-body {
+            font-size: 14px;
+            margin-bottom: 16px;
+            flex: 1;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .info-row .lbl {
+            color: var(--text-muted);
+        }
+
+        .info-row .val {
+            font-weight: 500;
+        }
+
+        .price-row {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .price-row .val {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--success);
+        }
+
+        .card-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            padding: 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            transition: opacity 0.2s;
+        }
+
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-edit {
+            background-color: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-remove {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-copy {
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Notifications & Dialogs */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--accent-blue);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 200;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 150;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            max-width: 450px;
+            width: 100%;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: var(--danger);
+        }
+
+        .modal-body {
+            font-size: 14px;
+            color: var(--text-main);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-260px);
+            }
+            .sidebar.active-mobile {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0 !important;
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <button class="menu-btn" id="toggleMenuBtn" onclick="toggleSidebar()">☰</button>
+        <div class="nav-title">ML PILOT DASHBOARD V4</div>
+    </nav>
+
+    <div class="app-container">
+
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-heading">Main</div>
+                <ul class="sidebar-menu">
+                    <li class="sidebar-item active" id="nav-calc" onclick="switchView('calc')">Calculator</li>
+                    <li class="sidebar-item" id="nav-dash" onclick="switchView('dash')">Search & Dashboard</li>
+                </ul>
+            </div>
+            
+            <div class="sidebar-bottom">
+                <div class="sidebar-heading">Totals</div>
+                <div class="sidebar-stats">
+                    <div class="stat-box">
+                        <label>Total Clients</label>
+                        <span id="stat-total-clients">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <label>Total Earnings</label>
+                        <span id="stat-total-earnings">PHP 0</span>
+                    </div>
+                </div>
+                <button class="clear-btn" onclick="confirmClearAll()">Clear All Clients</button>
+            </div>
+        </aside>
+
+        <main class="main-content" id="mainContent">
+
+            <section id="view-calc" class="view-section active">
+                <h2 class="page-title">Client Calculator & Manager</h2>
+                
+                <div class="grid-container">
+                    <div class="card">
+                        <div class="card-title" id="form-action-title">Add New Client</div>
+                        <form id="clientForm" onsubmit="event.preventDefault();">
+                            <input type="hidden" id="editIndex" value="">
+
+                            <div class="form-group">
+                                <label for="mlUsername">ML Username</label>
+                                <input type="text" id="mlUsername" required placeholder="Enter Mobile Legends Username">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="sourcePlatform">Source Platform</label>
+                                    <select id="sourcePlatform">
+                                        <option value="TikTok">TikTok</option>
+                                        <option value="Facebook">Facebook</option>
+                                        <option value="Messenger">Messenger</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sourceUsername">Source Username</label>
+                                    <input type="text" id="sourceUsername" required placeholder="Platform handle">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="serviceType">Service Type</label>
+                                <select id="serviceType" onchange="toggleServiceFields()">
+                                    <option value="Pilot">Pilot</option>
+                                    <option value="Duo Buy Win">Duo Buy Win</option>
+                                </select>
+                            </div>
+
+                            <div id="pilotFields" class="conditional-fields">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="currentRank">Current Rank</label>
+                                        <select id="currentRank">
+                                            <option value="Epic">Epic</option>
+                                            <option value="Legend">Legend</option>
+                                            <option value="Mythic">Mythic</option>
+                                            <option value="Honor">Honor</option>
+                                            <option value="Glory">Glory</option>
+                                            <option value="Immortal">Immortal</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="currentStars">Current Stars</label>
+                                        <input type="number" id="currentStars" min="0" value="0">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="targetRank">Target Rank</label>
+                                        <select id="targetRank">
+                                            <option value="Epic">Epic</option>
+                                            <option value="Legend">Legend</option>
+                                            <option value="Mythic">Mythic</option>
+                                            <option value="Honor">Honor</option>
+                                            <option value="Glory">Glory</option>
+                                            <option value="Immortal">Immortal</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="targetStars">Target Stars</label>
+                                        <input type="number" id="targetStars" min="0" value="0">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="ratePerStar">Rate Per Star (PHP)</label>
+                                        <input type="number" id="ratePerStar" min="0" value="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="pilotDiscount">Discount %</label>
+                                        <input type="number" id="pilotDiscount" min="0" max="100" value="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="duoFields" class="conditional-fields" style="display: none;">
+                                <div class="form-group">
+                                    <label for="winsNeeded">Wins Needed</label>
+                                    <input type="number" id="winsNeeded" min="0" value="0">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="pricePerWin">Price Per Win (PHP)</label>
+                                        <input type="number" id="pricePerWin" min="0" value="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="duoDiscount">Discount %</label>
+                                        <input type="number" id="duoDiscount" min="0" max="100" value="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="result-display">
+                                <span class="label">Calculated Price:</span>
+                                <span class="value" id="livePriceDisplay">PHP 0</span>
+                            </div>
+
+                            <div class="btn-container">
+                                <button type="button" class="btn btn-secondary" onclick="calculatePrice()">Calculate</button>
+                                <button type="button" class="btn btn-primary" onclick="handleSaveClient()">Save Client</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-dash" class="view-section">
+                <h2 class="page-title">Client Dashboard</h2>
+                
+                <div class="search-container card">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="searchQuery">Search Client</label>
+                        <input type="text" id="searchQuery" oninput="renderClients()" placeholder="Search by ML Username or Source Username...">
+                    </div>
+                </div>
+
+                <div class="client-grid" id="clientGridDisplay">
+                    </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div class="notification" id="notificationBar">Notification Message</div>
+
+    <div class="modal-overlay" id="duplicateModal">
+        <div class="modal">
+            <div class="modal-title">Username already exists.</div>
+            <div class="modal-body">
+                An entry with this ML Username already exists. Would you like to overwrite and update the existing client's data?
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal('duplicateModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmOverwrite()">Overwrite</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="clearAllModal">
+        <div class="modal">
+            <div class="modal-title">Clear All Records?</div>
+            <div class="modal-body">
+                Are you absolutely sure you want to remove all clients? This action is permanent and cannot be undone.
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal('clearAllModal')">Cancel</button>
+                <button class="btn btn-remove" onclick="executeClearAll()">Delete Everything</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Storage State
+        let clients = [];
+        let globalDuplicateIndex = null;
+
+        // On Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            toggleServiceFields();
+            setupAutoCalculators();
+        });
+
+        // Sidebar Responsive Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('active-mobile');
+            } else {
+                sidebar.classList.toggle('closed');
+                mainContent.classList.toggle('expanded');
+            }
+        }
+
+        // View Switcher Navigation
+        function switchView(viewName) {
+            document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+
+            if (viewName === 'calc') {
+                document.getElementById('view-calc').classList.add('active');
+                document.getElementById('nav-calc').classList.add('active');
+            } else if (viewName === 'dash') {
+                document.getElementById('view-dash').classList.add('active');
+                document.getElementById('nav-dash').classList.add('active');
+                renderClients();
+            }
+
+            // Close mobile menu on switch
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('active-mobile');
+            }
+        }
+
+        // Toggle Service Conditional Visibility
+        function toggleServiceFields() {
+            const serviceType = document.getElementById('serviceType').value;
+            const pilotFields = document.getElementById('pilotFields');
+            const duoFields = document.getElementById('duoFields');
+
+            if (serviceType === 'Pilot') {
+                pilotFields.style.display = 'block';
+                duoFields.style.display = 'none';
+            } else {
+                pilotFields.style.display = 'none';
+                duoFields.style.display = 'block';
+            }
+            calculatePrice();
+        }
+
+        // Live Change Calculation Binding
+        function setupAutoCalculators() {
+            const inputs = [
+                'currentStars', 'targetStars', 'ratePerStar', 'pilotDiscount',
+                'winsNeeded', 'pricePerWin', 'duoDiscount', 'currentRank', 'targetRank'
+            ];
+            inputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', calculatePrice);
+                document.getElementById(id).addEventListener('change', calculatePrice);
+            });
+        }
+
+        // Formula Pricing Engine
+        function calculatePrice() {
+            const serviceType = document.getElementById('serviceType').value;
+            let finalPrice = 0;
+
+            if (serviceType === 'Pilot') {
+                const currentStars = parseInt(document.getElementById('currentStars').value) || 0;
+                const targetStars = parseInt(document.getElementById('targetStars').value) || 0;
+                const ratePerStar = parseFloat(document.getElementById('ratePerStar').value) || 0;
+                const discount = parseFloat(document.getElementById('pilotDiscount').value) || 0;
+
+                // Simple total star difference calculations or basic system aggregation
+                const totalStarsNeeded = Math.max(0, targetStars - currentStars);
+                const grossPrice = totalStarsNeeded * ratePerStar;
+                finalPrice = grossPrice - (grossPrice * (discount / 100));
+
+            } else {
+                const winsNeeded = parseInt(document.getElementById('winsNeeded').value) || 0;
+                const pricePerWin = parseFloat(document.getElementById('pricePerWin').value) || 0;
+                const discount = parseFloat(document.getElementById('duoDiscount').value) || 0;
+
+                const grossPrice = winsNeeded * pricePerWin;
+                finalPrice = grossPrice - (grossPrice * (discount / 100));
+            }
+
+            finalPrice = Math.max(0, finalPrice);
+            document.getElementById('livePriceDisplay').innerText = 'PHP ' + finalPrice.toFixed(2);
+            return finalPrice;
+        }
+
+        // Management of Client CRUD Pipeline
+        function handleSaveClient() {
+            const mlUsername = document.getElementById('mlUsername').value.trim();
+            const sourcePlatform = document.getElementById('sourcePlatform').value;
+            const sourceUsername = document.getElementById('sourceUsername').value.trim();
+            const serviceType = document.getElementById('serviceType').value;
+            const editIndexStr = document.getElementById('editIndex').value;
+
+            if (!mlUsername || !sourceUsername) {
+                showNotification('Please populate all essential credential fields.');
+                return;
+            }
+
+            const calculatedPrice = calculatePrice();
+            
+            // Collect Form Payload Object
+            const clientPayload = {
+                mlUsername,
+                sourcePlatform,
+                sourceUsername,
+                serviceType,
+                price: calculatedPrice,
+                meta: {}
+            };
+
+            if (serviceType === 'Pilot') {
+                clientPayload.meta.currentRank = document.getElementById('currentRank').value;
+                clientPayload.meta.currentStars = document.getElementById('currentStars').value;
+                clientPayload.meta.targetRank = document.getElementById('targetRank').value;
+                clientPayload.meta.targetStars = document.getElementById('targetStars').value;
+                clientPayload.meta.ratePerStar = document.getElementById('ratePerStar').value;
+                clientPayload.meta.discount = document.getElementById('pilotDiscount').value;
+            } else {
+                clientPayload.meta.winsNeeded = document.getElementById('winsNeeded').value;
+                clientPayload.meta.pricePerWin = document.getElementById('pricePerWin').value;
+                clientPayload.meta.discount = document.getElementById('duoDiscount').value;
+            }
+
+            // Check Duplicate Index Conflicts
+            const existingIdx = clients.findIndex(c => c.mlUsername.toLowerCase() === mlUsername.toLowerCase());
+
+            if (editIndexStr !== "") {
+                // Edit mode override loop
+                const editingIdxInt = parseInt(editIndexStr);
+                clients[editingIdxInt] = clientPayload;
+                finalizeSavedState('Client system metrics modified successfully.');
+            } else if (existingIdx !== -1) {
+                // Collision warning dialog active
+                globalDuplicateIndex = existingIdx;
+                openModal('duplicateModal');
+            } else {
+                // Baseline structural creation sequence
+                clients.push(clientPayload);
+                finalizeSavedState('New client saved successfully.');
+            }
+        }
+
+        function confirmOverwrite() {
+            if (globalDuplicateIndex !== null) {
+                const mlUsername = document.getElementById('mlUsername').value.trim();
+                const sourcePlatform = document.getElementById('sourcePlatform').value;
+                const sourceUsername = document.getElementById('sourceUsername').value.trim();
+                const serviceType = document.getElementById('serviceType').value;
+                const calculatedPrice = calculatePrice();
+
+                const clientPayload = {
+                    mlUsername,
+                    sourcePlatform,
+                    sourceUsername,
+                    serviceType,
+                    price: calculatedPrice,
+                    meta: {}
+                };
+
+                if (serviceType === 'Pilot') {
+                    clientPayload.meta.currentRank = document.getElementById('currentRank').value;
+                    clientPayload.meta.currentStars = document.getElementById('currentStars').value;
+                    clientPayload.meta.targetRank = document.getElementById('targetRank').value;
+                    clientPayload.meta.targetStars = document.getElementById('targetStars').value;
+                    clientPayload.meta.ratePerStar = document.getElementById('ratePerStar').value;
+                    clientPayload.meta.discount = document.getElementById('pilotDiscount').value;
+                } else {
+                    clientPayload.meta.winsNeeded = document.getElementById('winsNeeded').value;
+                    clientPayload.meta.pricePerWin = document.getElementById('pricePerWin').value;
+                    clientPayload.meta.discount = document.getElementById('duoDiscount').value;
+                }
+
+                clients[globalDuplicateIndex] = clientPayload;
+                closeModal('duplicateModal');
+                finalizeSavedState('Client parameters successfully rewritten.');
+                globalDuplicateIndex = null;
+            }
+        }
+
+        function finalizeSavedState(msg) {
+            saveData();
+            clearForm();
+            showNotification(msg);
+            updateGlobalStats();
+        }
+
+        function clearForm() {
+            document.getElementById('clientForm').reset();
+            document.getElementById('editIndex').value = "";
+            document.getElementById('form-action-title').innerText = "Add New Client";
+            document.getElementById('serviceType').value = "Pilot";
+            toggleServiceFields();
+        }
+
+        // Render Cards View Engine
+        function renderClients() {
+            const grid = document.getElementById('clientGridDisplay');
+            const query = document.getElementById('searchQuery').value.toLowerCase();
+            grid.innerHTML = "";
+
+            clients.forEach((client, index) => {
+                // Filter validation logic block
+                if (query && !client.mlUsername.toLowerCase().includes(query) && !client.sourceUsername.toLowerCase().includes(query)) {
+                    return;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'client-card';
+
+                let detailsContent = '';
+                if (client.serviceType === 'Pilot') {
+                    detailsContent = `
+                        <div class="info-row"><span class="lbl">Current:</span><span class="val">${client.meta.currentRank} ${client.meta.currentStars} Star</span></div>
+                        <div class="info-row"><span class="lbl">Target:</span><span class="val">${client.meta.targetRank} ${client.meta.targetStars} Star</span></div>
+                    `;
+                } else {
+                    detailsContent = `
+                        <div class="info-row"><span class="lbl">Wins Track:</span><span class="val">${client.meta.winsNeeded} Games</span></div>
+                        <div class="info-row"><span class="lbl">Per Win:</span><span class="val">PHP ${client.meta.pricePerWin}</span></div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div>
+                        <div class="client-header">
+                            <div class="client-name">${client.mlUsername}</div>
+                            <div class="client-meta">Source: ${client.sourcePlatform} (${client.sourceUsername})</div>
+                        </div>
+                        <div class="client-body">
+                            <div class="info-row"><span class="lbl">Service:</span><span class="val">${client.serviceType}</span></div>
+                            ${detailsContent}
+                            <div class="price-row">
+                                <span class="lbl">Price:</span>
+                                <span class="val">PHP ${client.price.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="action-btn btn-edit" onclick="editClient(${index})">Edit</button>
+                        <button class="action-btn btn-remove" onclick="removeClient(${index})">Remove</button>
+                        <button class="action-btn btn-copy" onclick="copyQuote(${index})">Copy Quote</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Edit Mode Hook Action
+        function editClient(index) {
+            const client = clients[index];
+            switchView('calc');
+            
+            document.getElementById('editIndex').value = index;
+            document.getElementById('form-action-title').innerText = "Modify Existing Client Settings";
+
+            document.getElementById('mlUsername').value = client.mlUsername;
+            document.getElementById('sourcePlatform').value = client.sourcePlatform;
+            document.getElementById('sourceUsername').value = client.sourceUsername;
+            document.getElementById('serviceType').value = client.serviceType;
+
+            toggleServiceFields();
+
+            if (client.serviceType === 'Pilot') {
+                document.getElementById('currentRank').value = client.meta.currentRank;
+                document.getElementById('currentStars').value = client.meta.currentStars;
+                document.getElementById('targetRank').value = client.meta.targetRank;
+                document.getElementById('targetStars').value = client.meta.targetStars;
+                document.getElementById('ratePerStar').value = client.meta.ratePerStar;
+                document.getElementById('pilotDiscount').value = client.meta.discount;
+            } else {
+                document.getElementById('winsNeeded').value = client.meta.winsNeeded;
+                document.getElementById('pricePerWin').value = client.meta.pricePerWin;
+                document.getElementById('duoDiscount').value = client.meta.discount;
+            }
+            
+            calculatePrice();
+        }
+
+        // Single Row Deletion Action
+        function removeClient(index) {
+            clients.splice(index, 1);
+            saveData();
+            updateGlobalStats();
+            renderClients();
+            showNotification('Selected client record expunged.');
+        }
+
+        // Data Clipboard Quoting Engine
+        function copyQuote(index) {
+            const client = clients[index];
+            const quoteText = `ML Username: ${client.mlUsername}\nSource Platform: ${client.sourcePlatform}\nSource Username: ${client.sourceUsername}\nService: ${client.serviceType}\nPrice: PHP ${client.price.toFixed(2)}`;
+            
+            navigator.clipboard.writeText(quoteText).then(() => {
+                showNotification('Clipboard quote extraction complete.');
+            }).catch(() => {
+                showNotification('Clipboard permission rejected.');
+            });
+        }
+
+        // Global Action Clear Module
+        function confirmClearAll() {
+            openModal('clearAllModal');
+        }
+
+        function executeClearAll() {
+            clients = [];
+            saveData();
+            updateGlobalStats();
+            renderClients();
+            clearForm();
+            closeModal('clearAllModal');
+            showNotification('All client dashboard databases purged clean.');
+        }
+
+        // Stats Calculation Module
+        function updateGlobalStats() {
+            const totalClients = clients.length;
+            const totalEarnings = clients.reduce((acc, client) => acc + client.price, 0);
+
+            document.getElementById('stat-total-clients').innerText = totalClients;
+            document.getElementById('stat-total-earnings').innerText = 'PHP ' + totalEarnings.toFixed(2);
+        }
+
+        // Storage Pipeline Interface
+        function saveData() {
+            localStorage.setItem('ml_pilot_dashboard_v4_data', JSON.stringify(clients));
+        }
+
+        function loadData() {
+            const rawData = localStorage.getItem('ml_pilot_dashboard_v4_data');
+            if (rawData) {
+                try {
+                    clients = JSON.parse(rawData);
+                } catch(e) {
+                    clients = [];
+                }
+            }
+            updateGlobalStats();
+        }
+
+        // UI Modal Helpers
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function showNotification(msg) {
+            const bar = document.getElementById('notificationBar');
+            bar.innerText = msg;
+            bar.style.display = 'block';
+            setTimeout(() => {
+                bar.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
